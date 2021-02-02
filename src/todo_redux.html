@@ -45,11 +45,12 @@
       Object.seal(visibilityFilters);
 
       // actions
-      const addTodo = function(text, date) {
+      const addTodo = function(text, date, completed=false) {
         return {
           type: ACTIONS.ADD_TODO,
           text,
-          date
+          date,
+          completed
         };
       };
 
@@ -86,7 +87,8 @@
               ...state,
               {
                 text: action.text,
-                completed: action.date
+                date: action.date,
+                completed: action.completed
               }
             ];
           }
@@ -118,7 +120,7 @@
 
         // first type of actions ADD_TODO
         if (prevState.todo.length !== state.todo.length) {
-          container.apppendChild(createTodo(state.todo[state.todo.length - 1].text));
+          container.appendChild(createTodo(state.todo[state.todo.length - 1].text, state.todo[state.todo.length - 1].date));
           // second  type of action SET_VISIBILITY_FILTER
         } else if (prevState.visibilityFilter !== state.visibilityFilter) {
           setVisibility(container.children, state);
@@ -137,11 +139,50 @@
         prevState = state;
       });
 
+      // once an item is added to store we can actually add it to our DOM
+      const createTodo = function(msg=null, date=null) {
+        const tempEl = document.createElement('li');
+        const msgEl = document.createElement('span');
+        const dateEl = document.createElement('span');
+        msgEl.textContent = msg;
+        dateEl.textContent = `${date.year}/${date.month}/${date.day}`;
+        const check = document.createElement('input');
+        check.type = 'checkbox';
+        check.addEventListener('click', (ev) => {
+          let i = 0,
+            child = tempEl;
+          while((child = child.previousSibling) !== null) {
+            i += 1;
+          }
+
+          // redux state toggle
+          store.dispatch(toggleTodo(i));
+        });
+
+        tempEl.appendChild(msgEl);
+        tempEl.appendChild(dateEl);
+        tempEl.appendChild(check);
+
+        return tempEl;
+      };
+
+      // dumb implementation of visibility. Should compare previous state and current
+      // but this will work for demonstration purposes
+      const serVisibility = function(todos, state) {
+      }
+
       // setup our add button for the store
-      document.getElementById('add').onclick = function(ev) {
+      document.getElementById('add').addEventListener('click', (ev) => {
+        const input = document.getElementById('input');
         const year = document.getElementById('year');
         const month = document.getElementById('month');
         const day = document.getElementById('day');
+
+        if (!input.value) {
+          console.error('todo item can not be null');
+          return;
+        }
+
         store.dispatch(addTodo(input.value, {
           year: year.value,
           month: month.value,
@@ -151,7 +192,7 @@
         month.value = '';
         day.value = '';
         input.value = '';
-      }
+      })
     })();
     </script>
   </body>
